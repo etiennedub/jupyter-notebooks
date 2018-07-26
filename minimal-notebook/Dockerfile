@@ -37,10 +37,28 @@ ADD etc-fuse.conf /etc/fuse.conf
 
 # CMD ["/usr/sbin/automount > /tmp/test"]
 
-run echo "soft.computecanada.ca /cvmfs cvmfs defaults,_netdev,nodev 0 0" >> /etc/fstab
+run echo "soft.computecanada.ca /cvmfs cvmfs defaults,user,_netdev,nodev 0 0" >> /etc/fstab
+
+
+COPY . /tmp/src
+
+RUN mv /tmp/src/.s2i/bin /tmp/scripts
+
+RUN rm -rf /tmp/src/.git* && \
+    chown -R 1001 /tmp/src && \
+    chgrp -R 0 /tmp/src && \
+    chmod -R g+w /tmp/src
 
 USER 1001
 
+ENV S2I_SCRIPTS_PATH=/usr/libexec/s2i \
+    S2I_BASH_ENV=/opt/app-root/etc/scl_enable \
+    DISABLE_COLLECTSTATIC=1 \
+    DISABLE_MIGRATE=1
+
+RUN /tmp/scripts/assemble
+
+CMD [ "/tmp/scripts/run" ]
 #CMD ['automount; ls /cvmfs/soft.computecanada.ca']
 
 #RUN source /cvmfs/soft.computecanada.ca/config/profile/bash.sh
